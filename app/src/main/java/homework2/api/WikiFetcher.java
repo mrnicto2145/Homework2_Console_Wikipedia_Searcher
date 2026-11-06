@@ -6,9 +6,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
+
+import homework2.config.WikiConfig;
 import homework2.parser.WikiParser;
-import homework2.search.WikiConfig;
 
 /**
  * Выполняет HTTP-запрос к MediaWiki API и передаёт тело ответа
@@ -18,12 +20,14 @@ public class WikiFetcher {
 
     private static final String API_URL = WikiConfig.API_URL;
     private static final String USER_AGENT = WikiConfig.USER_AGENT;
+    private static final int MAX_RESULTS = WikiConfig.MAX_RESULTS;
+    private static final int FETCH_TIMEOUT = WikiConfig.FETCH_TIMEOUT;
 
     private final HttpClient httpClient;
     private final WikiParser parser;
 
     public WikiFetcher() {
-        this(HttpClient.newHttpClient(), new WikiParser());
+        this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(FETCH_TIMEOUT)).build(), new WikiParser());
     }
 
     /** Конструктор для внедрения зависимостей (удобно для тестов). */
@@ -47,13 +51,14 @@ public class WikiFetcher {
                 + "&list=search"
                 + "&srsearch=" + encodedQuery
                 + "&format=json"
-                + "&srlimit=10"
+                + "&srlimit=" + MAX_RESULTS
                 + "&srprop=snippet";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("User-Agent", USER_AGENT)
                 .GET()
+                .timeout(Duration.ofSeconds(FETCH_TIMEOUT))
                 .build();
 
         HttpResponse<String> response =
@@ -64,13 +69,5 @@ public class WikiFetcher {
         }
 
         return parser.parse(response.body());
-    }
-
-    public static void main(String[] args) throws Exception {
-        WikiFetcher fetcher = new WikiFetcher();
-        for (WikiParser.SearchResult r : fetcher.search("Albert Einstein")) {
-            System.out.println(r.getTitle());
-            System.out.println("  " + r.getSnippet());
-        }
     }
 }

@@ -4,7 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import homework2.search.WikiConfig;
+
+import homework2.config.WikiConfig;
 
 
 //Обработчик ввода с консоли с валидацией поискового запроса к Википедии.
